@@ -44,7 +44,8 @@ NTSTATUS kuhl_m_lsadump_dcsync(int argc, wchar_t * argv[])
 		if(kull_m_net_getCurrentDomainInfo(&pPolicyDnsDomainInfo))
 			szDomain = pPolicyDnsDomainInfo->DnsDomainName.Buffer;
 
-	if(szDomain && wcschr(szDomain, L'.'))
+	// domains don't actually require a '.' in their FQDN, so we don't need to check for it.
+	if(szDomain)
 	{
 		kprintf(L"[DC] \'%s\' will be the domain\n", szDomain);
 		if(!(kull_m_string_args_byName(argc, argv, L"dc", &szDc, NULL) || kull_m_string_args_byName(argc, argv, L"kdc", &szDc, NULL)))
