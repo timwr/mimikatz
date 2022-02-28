@@ -259,7 +259,9 @@ wchar_t * powershell_reflective_mimikatz(LPCWSTR input)
 {
 	int argc = 0;
 	wchar_t ** argv;
-	
+	NTSTATUS status = STATUS_SUCCESS;
+	mimikatz_begin();
+
 	if(argv = CommandLineToArgvW(input, &argc))
 	{
 		if (outputBuffer == NULL)
@@ -269,9 +271,51 @@ wchar_t * powershell_reflective_mimikatz(LPCWSTR input)
 		}
 		outputBufferElementsPosition = 0;
 		if(outputBuffer = (wchar_t *) LocalAlloc(LPTR, outputBufferElements * sizeof(wchar_t)))
-			wmain(argc, argv);
+		{
+			wchar_t * runcommand = 0;
+			wchar_t * newarg = 0;
+			for (int arg = 0; arg < argc; arg++)
+			{
+				//Is the command actually an argument for the previous command?, e.g /in:something
+				if (runcommand && (argv[arg][0] == '/' || (argv[arg][0] == '"' && argv[arg][1] == '/')))
+				{
+					size_t newarglen = wcslen(runcommand) + wcslen(argv[arg]) + 6;
+					newarg = LocalAlloc(LPTR, newarglen);
+					if (wcsstr(argv[arg], L" ")) {
+						swprintf_s(newarg, newarglen, L"%ls \"%ls\"", runcommand, argv[arg]);
+					} else {
+						swprintf_s(newarg, newarglen, L"%ls %ls", runcommand, argv[arg]);
+					}
+					runcommand = newarg;
+				} else {
+					if (runcommand) {
+						kprintf(L"\n" MIMIKATZ L"(" MIMIKATZ_AUTO_COMMAND_STRING L") # %s\n", runcommand);
+						status = mimikatz_dispatchCommand(runcommand);
+						if (newarg == runcommand) {
+							LocalFree(newarg);
+							newarg = 0;
+						}
+						runcommand = 0;
+					}
+					runcommand = argv[arg];
+				}
+			}
+
+			if (runcommand) {
+				kprintf(L"\n" MIMIKATZ L"(" MIMIKATZ_AUTO_COMMAND_STRING L") # %s\n", runcommand);
+				status = mimikatz_dispatchCommand(runcommand);
+				if (newarg == runcommand) {
+					LocalFree(newarg);
+					newarg = 0;
+				}
+				runcommand = 0;
+			}
+		}
+
 		LocalFree(argv);
 	}
+
+	mimikatz_end(status);
 	return outputBuffer;
 }
 #endif
